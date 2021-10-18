@@ -1,0 +1,254 @@
+conda activate qiime2-2021.4
+
+#improting demultiplexed fastq files 
+
+qiime tools import \
+  --type 'SampleData[PairedEndSequencesWithQuality]' \
+  --input-path sctld-manifest \
+  --output-path sctld-demux.qza \
+  --input-format PairedEndFastqManifestPhred33V2
+
+#trimming PCR primers 
+#Primer seq adjusted based on Kozich et al. 2013
+#fwd-GTGCCAGCMGCCGCGGTAA
+#rev-TAATCTWTGGGVHCATCAGG
+
+qiime cutadapt trim-paired \
+	--i-demultiplexed-sequences sctld-demux.qza \
+	--p-cores 16 \
+	--p-front-f GTGTCAGCMGCCGCGGTAA \
+	--p-front-r GGACTACHVGGGTWTCTAAT \
+	--o-trimmed-sequences sctld-demux-primer-trimmed.qza
+
+#dada2 erronous sequencing denosing,chimeric removal
+
+qiime dada2 denoise-paired \
+  --i-demultiplexed-seqs sctld-demux-primer-trimmed.qza \
+  --p-trim-left-f 13 \
+  --p-trim-left-r 13 \
+  --p-trunc-len-f 240 \
+  --p-trunc-len-r 160 \
+  --o-table table.qza \
+  --p-n-threads 0 \
+  --o-representative-sequences rep-seqs.qza \
+  --o-denoising-stats denoising-stats.qza 
+  
+#assigning taxonomy to ASV-representative-seq 
+
+#assinging taxonomy with Silva 
+mkdir training-feature-classifiers
+cd training-feature-classifiers
+
+wget https://data.qiime2.org/2021.2/common/silva-138-99-seqs-515-806.qza
+wget https://data.qiime2.org/2021.2/common/silva-138-99-tax-515-806.qza
+
+
+qiime feature-classifier fit-classifier-naive-bayes \
+  --i-reference-reads silva-138-99-seqs-515-806.qza \
+  --i-reference-taxonomy silva-138-99-tax-515-806.qza \
+  --o-classifier silva_classifier.qza
+
+qiime feature-classifier classify-sklearn \
+  --i-classifier silva_classifier.qza \
+  --p-n-jobs 16 \
+  --i-reads rep-seqs.qza \
+  --o-classification taxonomy.qza
+
+qiime metadata tabulate \
+  --m-input-file taxonomy.qza \
+  --o-visualization taxonomy.qz
+  
+qiime tools export \
+	--input-path taxonomy.qza  \
+	--output-path exported_taxonomy
+
+#fitlering ASVstable based on taxonomy results 
+  
+qiime taxa filter-table \
+  --i-table table.qza \
+  --i-taxonomy taxonomy.qza \
+  --p-exclude mitochondria,chloroplast,Eukaryota,Unassigned \
+  --o-filtered-table table_nomtnochloeunounass.qza
+
+
+qiime taxa filter-seqs \
+  --i-sequences  rep-seqs.qza \
+  --i-taxonomy  taxonomy.qza \
+  --p-exclude mitochondria,chloroplast,Eukaryota,Unassigned \
+  --o-filtered-sequences rep_seqs_nomtnochloeunounass.qza
+
+qiime feature-table tabulate-seqs \
+  --i-data rep_seqs_nomtnochloeunounass.qza \
+  --o-visualization rep-seqs-final.qzv  
+
+qiime phylogeny align-to-tree-mafft-fasttree \
+  --i-sequences rep_seqs_nomtnochloeunounass.qza \
+  --o-alignment aligned-rep-seqs.qza \
+  --o-masked-alignment masked-aligned-rep-seqs.qza \
+  --o-tree unrooted-tree.qza \
+  --o-rooted-tree rooted-tree.qza
+  
+qiime tools export \
+	--input-path rooted-tree.qza  \
+	--output-path exported_tree_rooted
+
+#removing low abudance ASVs 
+
+qiime feature-table filter-features \
+ --i-table table_nomtnochloeunounass.qza \
+ --p-min-frequency 20 \
+ --o-filtered-table ASV-table-final.qza  
+
+
+qiime tools export \
+	--input-path ASV-table-final.qza \
+	--output-path exported-ASV-table
+cd exported-ASV-table
+biom convert -i feature-table.biom -o feature-table.tsv --to-tsv 
+
+
+#filtering fasta rep files based on taxonomy results 
+
+qiime feature-table summarize \
+  --i-table ASV-table-final.qza  \
+  --o-visualization ASV-table-final.qzv   \
+  --m-sample-metadata-file sample-metadata.txt
+
+#calculating beta diversity 
+
+qiime diversity core-metrics-phylogenetic \
+  --i-phylogeny rooted-tree.qza \
+  --i-table ASV-table-final.qza \
+  --p-sampling-depth 46000 \
+  --output-dir core-metrics-results \
+  --m-metadata-file sample-metadata.txt
+  
+  
+#calculating rarefraction table  
+
+qiime diversity alpha-rarefaction \
+  --i-table ASV-table-final.qza \
+  --i-phylogeny rooted-tree.qza \
+  --p-max-depth 46000 \
+  --m-metadata-file sample-metadata.txt \
+  --o-visualization alpha-rarefaction.qzv 
+
+
+#calculating alpha diversity  
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity alpha-diversity/faith_pd_vector.qza \
+  --m-metadata-file sample-metadata.txt\
+  --o-visualization alpha-diversity/faith-pd-group-significance.qzv
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity alpha-diversity/evenness_vector.qza \
+  --m-metadata-file sample-metadata.txt \
+  --o-visualization alpha-diversity/evenness-group-significance.qzv
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity alpha-diversity/shannon_vector.qza \
+  --m-metadata-file sample-metadata.txt \
+  --o-visualization alpha-diversity/shannon-group-significance.qzv
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity alpha-diversity/observed_features_vector.qza \
+  --m-metadata-file sample-metadata.txt \
+  --o-visualization alpha-diversity/observed-features-group-significance.qzv
+
+#permanova on diversity data matrices
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file sample-metadata.txt \
+  --m-metadata-column treatment \
+  --o-visualization core-metrics-results/unweighted-unifrac-treatment-permanova.qzv \
+  --p-pairwise
+
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file sample-metadata.txt \
+  --m-metadata-column fate \
+  --o-visualization core-metrics-results/unweighted-unifrac-fate-permanova.qzv \
+  --p-pairwise
+
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/bray_curtis_distance_matrix.qza \
+  --m-metadata-file sample-metadata.txt \
+  --m-metadata-column treatment \
+  --o-visualization core-metrics-results/bc-treatment-permanova.qzv \
+  --p-pairwise
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/bray_curtis_distance_matrix.qza \
+  --m-metadata-file sample-metadata.txt \
+  --m-metadata-column fate \
+  --o-visualization core-metrics-results/bc-fate-permanova.qzv \
+  --p-pairwise
+
+
+qiime taxa barplot \
+  --i-table ASV-table-final.qza \
+  --i-taxonomy taxonomy.qza \
+  --m-metadata-file sample-metadata.txt \
+  --o-visualization taxa-bar-plots.qzv
+
+
+ACNOME test -- sign per taxonomic level
+level 1 kingdom
+level 2 phylum
+level 3 class 
+level 4 order 
+level 5 family
+level 6 genus 
+
+
+qiime taxa collapse \
+  --i-table tablemin20nochlornomito.qza \
+  --i-taxonomy taxonomy.qza \
+  --p-level 6 \
+  --o-collapsed-table collapsed-nonRtable-genus.qza
+
+qiime composition add-pseudocount \
+  --i-table collapsed-nonRtable-genus.qza \
+  --o-composition-table comp-table-genus.qza
+
+qiime composition ancom \
+  --i-table comp-table-genus.qza \
+  --m-metadata-file sample-metadata.txt \
+  --m-metadata-column symptom \
+  --o-visualization genus-ancom-symptom.qzv
+  
+qiime composition ancom \
+  --i-table comp-table-genus.qza \
+  --m-metadata-file sample-metadata.txt \
+  --m-metadata-column treatment \
+  --o-visualization genus-ancom-treatment.qzv  
+  
+
+qiime taxa collapse \
+  --i-table tablemin20nochlornomito.qza \
+  --i-taxonomy taxonomy.qza \
+  --p-level 5 \
+  --o-collapsed-table collapsed-nonRtable-family.qza
+
+qiime composition add-pseudocount \
+  --i-table collapsed-nonRtable-family.qza \
+  --o-composition-table comp-table-family.qza
+
+qiime composition ancom \
+  --i-table comp-table-family.qza \
+  --m-metadata-file sample-metadata4.txt \
+  --m-metadata-column symptom \
+  --o-visualization family-ancom-symptom.qzv
+ 
+qiime composition ancom \
+  --i-table comp-table-family.qza \
+  --m-metadata-file sample-metadata4.txt \
+  --m-metadata-column treatment \
+  --o-visualization family-ancom-treatment.qzv
+  
+
+
