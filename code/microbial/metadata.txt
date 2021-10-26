@@ -1,43 +1,43 @@
-sample_id	species	genotype	treatment	fate
-SCTLD.1	Mcav	Mcav-O	HS	C
-SCTLD.2	Mcav	Mcav-O	HS	C
-SCTLD.3	Mcav	Mcav-O	HS	C
-SCTLD.4	Mcav	Mcav-R	HS	C
-SCTLD.5	Mcav	Mcav-R	HS	C
-SCTLD.6	Mcav	Mcav-R	HS	C
-SCTLD.7	Mcav	Mcav-O	CDS	TL
-SCTLD.8	Mcav	Mcav-O	CDS	TL
-SCTLD.9	Mcav	Mcav-O	CDS	NAI
-SCTLD.10	Mcav	Mcav-R	CDS	TL
-SCTLD.11	Mcav	Mcav-R	CDS	TL
-SCTLD.13	Mcav	Mcav-O	ADS	NAI
-SCTLD.14	Mcav	Mcav-O	ADS	TL
-SCTLD.15	Mcav	Mcav-R	ADS	TL
-SCTLD.16	Mcav	Mcav-R	ADS	TL
-SCTLD.17	Mcav	Mcav-R	ADS	TL
-SCTLD.18	Ofav	Ofav-O	HS	C
-SCTLD.19	Ofav 	Ofav-O	HS	C
-SCTLD.20	Ofav	Ofav-O	HS	C
-SCTLD.21	Ofav 	Ofav-R	HS	C
-SCTLD.22	Ofav	Ofav-R	HS	C
-SCTLD.23	Ofav 	Ofav-R	HS	C
-SCTLD.24	Ofav	Ofav-Y	HS	C
-SCTLD.25	Ofav	Ofav-Y	HS	C
-SCTLD.26	Ofav	Ofav-Y	HS	C
-SCTLD.27	Ofav	Ofav-O	CDS	TL
-SCTLD.28	Ofav	Ofav-O	CDS	NAI
-SCTLD.29	Ofav	Ofav-O	CDS	NAI
-SCTLD.30	Ofav	Ofav-R	CDS	NAI
-SCTLD.31	Ofav	Ofav-R	CDS	NAI
-SCTLD.32	Ofav	Ofav-R	ADS	TL
-SCTLD.33	Ofav 	Ofav-Y	CDS	TL
-SCTLD.34	Ofav	Ofav-Y	CDS	TL
-SCTLD.35	Ofav	Ofav-Y	CDS	NAI
-SCTLD.36	Ofav	Ofav-O	ADS	TL
-SCTLD.37	Ofav	Ofav-O	ADS	TL
-SCTLD.38	Ofav 	Ofav-R	ADS	NAI
-SCTLD.39	Ofav	Ofav-R	ADS	NAI
-SCTLD.40	Ofav	Ofav-R	CDS	NAI
-SCTLD.41	Ofav	Ofav-Y	ADS	NAI
-SCTLD.42	Ofav	Ofav-Y	ADS	NAI
-SCTLD.43	Ofav	Ofav-Y	ADS	NAI
+sample_id	well	species	genotype	treatment	condition
+Sediment_013	A1	Mcav	Mcav-Orange	HS	C
+Sediment_014	B1	Mcav	Mcav-Orange	HS	C
+Sediment_015	C1	Mcav	Mcav-Orange	HS	C
+Sediment_010	D1	Mcav	Mcav-Red	HS	C
+Sediment_011	E1	Mcav	Mcav-Red	HS	C
+Sediment_012	F1	Mcav	Mcav-Red	HS	C
+Sediment_043	G1	Mcav	Mcav-Orange	BDS	NAI
+Sediment_044	H1	Mcav	Mcav-Orange	BDS	TL
+Sediment_045	A2	Mcav	Mcav-Orange	BDS	NAI
+Sediment_040	B2	Mcav	Mcav-Red	BDS	TL
+Sediment_041	C2	Mcav	Mcav-Red	BDS	TL
+Sediment_058	E2	Mcav	Mcav-Orange	IDS	NAI
+Sediment_060	F2	Mcav	Mcav-Orange	IDS	TL
+Sediment_055	G2	Mcav	Mcav-Red	IDS	TL
+Sediment_056	H2	Mcav	Mcav-Red	IDS	TL
+Sediment_057	A3	Mcav	Mcav-Red	IDS	TL
+Sediment_004	B3	Ofav	Ofav-Orange	HS	C
+Sediment_005	C3	Ofav 	Ofav-Orange	HS	C
+Sediment_006	D3	Ofav	Ofav-Orange	HS	C
+Sediment_001	E3	Ofav 	Ofav-Red	HS	C
+Sediment_002	F3	Ofav	Ofav-Red	HS	C
+Sediment_003	G3	Ofav 	Ofav-Red	HS	C
+Sediment_007	H3	Ofav	Ofav-Yellow	HS	C
+Sediment_008	A4	Ofav	Ofav-Yellow	HS	C
+Sediment_009	B4	Ofav	Ofav-Yellow	HS	C
+Sediment_034	C4	Ofav	Ofav-Orange	BDS	TL
+Sediment_035	D4	Ofav	Ofav-Orange	BDS	NAI
+Sediment_036	E4	Ofav	Ofav-Orange	BDS	NAI
+Sediment_031	F4	Ofav	Ofav-Red	BDS	NAI
+Sediment_032	G4	Ofav	Ofav-Red	BDS	NAI
+Sediment_033	H4	Ofav	Ofav-Red	IDS	NAI
+Sediment_037	A5	Ofav 	Ofav-Yellow	BDS	NAI
+Sediment_038	B5	Ofav	Ofav-Yellow	BDS	TL
+Sediment_039	C5	Ofav	Ofav-Yellow	BDS	NAI
+Sediment_049	D5	Ofav	Ofav-Orange	IDS	TL
+Sediment_051	E5	Ofav	Ofav-Orange	IDS	TL
+Sediment_046	F5	Ofav 	Ofav-Red	IDS	NAI
+Sediment_047	G5	Ofav	Ofav-Red	IDS	NAI
+Sediment_048	H5	Ofav	Ofav-Red	BDS	TL
+Sediment_052	A6	Ofav	Ofav-Yellow	IDS	NAI
+Sediment_053	B6	Ofav	Ofav-Yellow	IDS	NAI
+Sediment_054	C6	Ofav	Ofav-Yellow	IDS	NAI
