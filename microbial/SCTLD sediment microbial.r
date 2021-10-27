@@ -15,6 +15,8 @@ library(cowplot)
 library(grid)
 library(scales)
 library(RColorBrewer)
+library(vegan)
+library(ape)
 
 
 #### data import ####
@@ -27,6 +29,9 @@ asv <- t(asv)
 # order the metadata so it matches the ASV table
 idx <- match(rownames(asv),rownames(metadata))
 metadata <- metadata[idx,]
+
+metadata$condition <- factor( as.character(metadata$condition), levels=c("C","NAI","TL") )
+metadata$treatment <- factor( as.character(metadata$treatment), levels=c("HS","BDS","IDS") )
 
 ASV = otu_table(asv, taxa_are_rows = FALSE)
 TAX = tax_table(taxa)
@@ -45,10 +50,11 @@ get_taxa_unique(ps, "Phylum")
 
 #### statistical tests ####
 
-# corncob differencial abundance test 
+# corncob differential abundance test 
 set.seed(1)
 
-da_analysis <- differentialTest(formula = ~ condition,
+# by sample condition
+da_condition <- differentialTest(formula = ~ condition,
 	phi.formula = ~ condition,
 	formula_null = ~ 1,
 	phi.formula_null = ~ condition,
@@ -56,14 +62,18 @@ da_analysis <- differentialTest(formula = ~ condition,
 	data = ps,
 	fdr_cutoff = 0.05)
 
-da_analysis
-da_analysis$significant_taxa 
-plot(da_analysis)
+# lists the significant ASVs
+da_condition$significant_taxa 
+
+# plot of differentially-abundant ASVs in NAI and TL samples compared to control
+pdf("microbial_DA_condition.pdf", width=12, height=4)
+plot(da_condition)
+dev.off()
 
 # create genus-level-table
 ps_genus <- ps %>% tax_glom("Genus")
 
-da_genus <- differentialTest(formula = ~ condition,
+da_condition_genus <- differentialTest(formula = ~ condition,
 	phi.formula = ~ condition,
 	formula_null = ~ 1,
 	phi.formula_null = ~ condition,
@@ -71,7 +81,73 @@ da_genus <- differentialTest(formula = ~ condition,
 	data = ps_genus,
 	fdr_cutoff = 0.05)
 
-plot(da_genus)
+# lists the significant ASVs
+da_condition_genus$significant_taxa 
+
+# plot of differentially-abundant ASVs in NAI and TL samples compared to control
+pdf("microbial_DA_condition_genus.pdf", width=10, height=6)
+plot(da_condition_genus)
+dev.off()
+
+# by treatment
+da_treatment <- differentialTest(
+  formula = ~ treatment,
+  phi.formula = ~ treatment,
+  formula_null = ~ 1,
+  phi.formula_null = ~ treatment,
+  test = "Wald",
+  boot = FALSE,
+  data = ps,
+  fdr_cutoff = 0.05
+)
+
+# lists the significant ASVs
+da_treatment$significant_taxa 
+
+# plot of differentially-abundant ASVs in treatments BDS and IDS compared to HS
+pdf("microbial_DA_treatment.pdf", width=16, height=40)
+plot(da_treatment)
+dev.off()
+
+da_treatment_genus <- differentialTest(
+  formula = ~ treatment,
+  phi.formula = ~ treatment,
+  formula_null = ~ 1,
+  phi.formula_null = ~ treatment,
+  test = "Wald",
+  boot = FALSE,
+  data = ps_genus,
+  fdr_cutoff = 0.05
+)
+
+# lists the significant ASVs
+da_treatment_genus$significant_taxa 
+
+# plot of differentially-abundant ASVs in treatments BDS and IDS compared to HS
+pdf("microbial_DA_treatment_genus.pdf", width=12, height=18)
+plot(da_treatment_genus)
+dev.off()
+
+save(da_condition,da_condition_genus,da_treatment,da_treatment_genus,file="microbial_corncob.RData")
+
+#### PCoA ####
+
+diss <- vegdist(asv, "bray")
+pcoa <- pcoa(diss)
+scores <- pcoa$values
+vectors <- pcoa$vectors
+
+pdf(file="SCTLD_sediment_microbial_PCoA.pdf", width=12, height=6)
+par(mfrow=c(1,2))
+plot(vectors[,1], vectors[,2],col=c('#EBED9D','#868659','#CECE88')[as.numeric(as.factor(metadata$treatment))],pch=c(15,1,19)[as.numeric((as.factor(metadata$condition)))], xlab="Coordinate 1", ylab="Coordinate 2", main="Treatment")
+# ordispider(vectors, metadata$treatment, label=F, col=c('#EBED9D','#868659','#CECE88'))
+legend("top", legend=c("HS", "BDS","IDS"), fill = c('#EBED9D','#868659','#CECE88'), bty="n")
+legend("bottom", legend=c("control","NAI","TL"), pch=c(15,1,19), bty="n")
+plot(vectors[,1], vectors[,2],col=c("green","orange","red")[as.numeric(as.factor(metadata$condition))],pch=c(15,17,25)[as.numeric(as.factor(metadata$treatment))], xlab="Coordinate 1", ylab="Coordinate 2", main="Condition")
+# ordispider(vectors, metadata$condition, label=F, col=c("green","orange","red"))
+legend("top", legend=c("control", "NAI", "TL"), fill = c("green","orange","red"), bty="n")
+legend("bottom", legend=c("HS","BDS","IDS"), pch=c(15,17,25), bty="n")
+dev.off()
 
 
 #### bubble plot ####
@@ -94,7 +170,7 @@ show_col(colors)
 # keep the order of samples from your data
 sign.genera.long$Condition <- factor(sign.genera.long$Condition,levels=unique(sign.genera.long$Condition))
  
-xx = ggplot(sign.genera.long, aes(x = Sample, y = variable)) + 
+bubble <- ggplot(sign.genera.long, aes(x = Sample, y = variable)) + 
   geom_point(aes(size = value, fill = variable), alpha = 0.75, shape = 21) + 
   scale_size_continuous(limits = c(0, 7), range = c(0,17), breaks = c(0.5,2.5,5)) + 
   facet_grid(. ~ Condition + Treatment, scales="free", space="free") +
@@ -109,6 +185,6 @@ xx = ggplot(sign.genera.long, aes(x = Sample, y = variable)) +
   legend.position = "top",legend.justification="left", legend.direction = "horizontal") +  
   scale_fill_manual(values = colors, guide = "none") + 
   scale_y_discrete(limits = rev(levels(sign.genera.long$variable))) 
-xx
+bubble
 
-ggsave("microbial_abundance.pdf", plot= xx, width=10, height=8, units="in", dpi=300)
+ggsave("SCTLD_sediment_microbial_abundance.pdf", plot= bubble, width=10, height=8, units="in", dpi=300)
