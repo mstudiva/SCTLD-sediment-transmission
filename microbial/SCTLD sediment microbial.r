@@ -129,6 +129,7 @@ plot(da_treatment_genus)
 dev.off()
 
 save(da_condition,da_condition_genus,da_treatment,da_treatment_genus,file="microbial_corncob.RData")
+load("microbial_corncob.RData")
 
 #### PCoA ####
 

@@ -7,6 +7,7 @@ library(emmeans)
 library(readr)
 library(betareg)
 library(emmeans)
+library(gridExtra)
 
 
 #### data import and summary stats ####
@@ -45,6 +46,9 @@ histo %>%
 summarized_data %>%
   filter(Measurement == "Zooxarea") -> vac1
 
+vac1$Species <- factor( as.character(vac1$Species), levels=c("Ofav","Mcav") )
+vac1$Treatment <- factor( as.character(vac1$Treatment), levels=c("HS","DC","BDS","IDS") )
+
 # general linear models for both species
 # Mcav
 fitzoox <- glm(as.logical(diseased) ~ mean, family = "binomial", data = vac1[which(vac1$Species == 'Mcav'),])
@@ -62,7 +66,7 @@ yfitzoox1 <- predict(fitzoox, list(mean = xfitzoox1),type = "response")
 pdf("histology_symbiontvacuole_prediction.pdf", width=6, height=6)
 plot(as.logical(diseased) ~ mean, data = vac1, pch  = 16, 
      col = rgb(red = 0, green = 0, blue = 0, alpha = 0.1), 
-     xlab = "Symbiont:Vacuole ratio", ylab = "Probability Diseased", xlim = c(0.25,0.75))
+     xlab = "Symbiont:vacuole ratio", ylab = "Probability diseased", xlim = c(0.25,0.75))
 legend(0.25, 0.2, legend=c("HS", "DC", "BDS", "IDS"),
        col=c("#EBED9D", "grey50", "#868659", "#CECE88"), lty=1, cex=0.8)
 lines(xfitzoox1,yfitzoox1)
@@ -108,15 +112,22 @@ segments(sdlowD,yI,sdhighD,yI, col = '#CECE88')
 dev.off()
 
 # beta regression for treatment and species comparisons
-beta_vac <- betareg(mean ~ Treatment-1 + Species, vac1)
-summary(beta_vac)
+y <- vac1$mean
+n.obs <- sum(!is.na(y))
+y2 <- (y * (n.obs -1) + 0.5)/n.obs
+vac1$y2 <- y2
+
+beta_vac <- betareg(y2 ~ Treatment + Species, vac1)
 # overall factor p values
 joint_tests(beta_vac)
 
-# boxplot of symbiont:vacuole ratio
-vac1$Species <- factor( as.character(vac1$Species), levels=c("Ofav","Mcav") )
-vac1$Treatment <- factor( as.character(vac1$Treatment), levels=c("HS","DC","BDS","IDS") )
+# individual species tests
+vac_ofav <- betareg(mean ~ Treatment, vac1[which(vac1$Species == 'Ofav'),])
+summary(vac_ofav)
+vac_mcav <- betareg(mean ~ Treatment, vac1[which(vac1$Species == 'Mcav'),])
+summary(vac_mcav)
 
+# boxplot of symbiont:vacuole ratio
 specnames <- c("Orbicella faveolata", "Montastraea cavernosa")
 names(specnames) <- c("Ofav", "Mcav")
 
@@ -124,9 +135,11 @@ pdf("histology_symbiontvacuole_boxplot.pdf", width=6, height=4)
 ggplot(aes(y = mean, x = Treatment, fill = Treatment),  data = vac1) +
   geom_boxplot() + scale_fill_manual(values=c('#EBED9D','grey50','#868659','#CECE88')) +
   facet_wrap(~Species, labeller = labeller(Species = specnames)) + theme_classic() +
-  xlab(" ") + ylab("Symbiont: vacuole ratio") + theme(
+  xlab(element_blank()) + ylab("Symbiont:vacuole ratio") + theme(
+    axis.text.x=element_blank(),
     strip.text.x = element_text(
-      size = 11, face = "bold.italic"
+      size = 11, face = "bold.italic",
+      
     ))
 dev.off()
 
@@ -137,20 +150,25 @@ dev.off()
 summarized_data %>%
   filter(Measurement == "Exopercent") -> exo1
 
+exo1$Species <- factor( as.character(exo1$Species), levels=c("Ofav","Mcav") )
+exo1$Treatment <- factor( as.character(exo1$Treatment), levels=c("HS","DC","BDS","IDS") )
+
 # beta regression for treatment and species comparisons
 y <- exo1$mean
 n.obs <- sum(!is.na(y))
 y2 <- (y * (n.obs -1) + 0.5)/n.obs
 exo1$y2 <- y2
 
-beta_exo <- betareg(y2 ~ Treatment+Species, exo1, na.action = na.omit)
-summary(beta_exo)
+beta_exo <- betareg(y2 ~ Treatment + Species, exo1)
 joint_tests(beta_exo)
 
-# boxplot of exocytosis
-exo1$Species <- factor( as.character(exo1$Species), levels=c("Ofav","Mcav") )
-exo1$Treatment <- factor( as.character(exo1$Treatment), levels=c("HS","DC","BDS","IDS") )
+# individual species tests
+exo_ofav <- betareg(y2 ~ Treatment, exo1[which(exo1$Species == 'Ofav'),])
+summary(exo_ofav)
+exo_mcav <- betareg(y2 ~ Treatment, exo1[which(exo1$Species == 'Mcav'),])
+summary(exo_mcav)
 
+# boxplot of exocytosis
 specnames <- c("Orbicella faveolata", "Montastraea cavernosa")
 names(specnames) <- c("Ofav", "Mcav")
 
@@ -171,14 +189,14 @@ dev.off()
 summarized_data %>%
   filter(Measurement == 'Gastrosep') -> gastro1
 
+gastro1$Species <- factor( as.character(gastro1$Species), levels=c("Ofav","Mcav") )
+gastro1$Treatment <- factor( as.character(gastro1$Treatment), levels=c("HS","DC","BDS","IDS") )
+
 # ANOVA for treatment and species comparisons
 anova_gastro <- aov(mean ~ Treatment*Species, gastro1)
 summary(anova_gastro)
 
 # boxplot of gastrodermal separation
-gastro1$Species <- factor( as.character(gastro1$Species), levels=c("Ofav","Mcav") )
-gastro1$Treatment <- factor( as.character(gastro1$Treatment), levels=c("HS","DC","BDS","IDS") )
-
 specnames <- c("Orbicella faveolata", "Montastraea cavernosa")
 names(specnames) <- c("Ofav", "Mcav")
 
@@ -191,3 +209,48 @@ ggplot(aes(y = mean, x = Treatment, fill = Treatment),  data = gastro1) +
       size = 11, face = "bold.italic"
     ))
 dev.off()
+
+
+#### multiplot ####
+
+vac1$Species <- factor( as.character(vac1$Species), levels=c("Ofav","Mcav") )
+vac1$Treatment <- factor( as.character(vac1$Treatment), levels=c("HS","DC","BDS","IDS") )
+
+exo1$Species <- factor( as.character(exo1$Species), levels=c("Ofav","Mcav") )
+exo1$Treatment <- factor( as.character(exo1$Treatment), levels=c("HS","DC","BDS","IDS") )
+
+gastro1$Species <- factor( as.character(gastro1$Species), levels=c("Ofav","Mcav") )
+gastro1$Treatment <- factor( as.character(gastro1$Treatment), levels=c("HS","DC","BDS","IDS") )
+
+specnames <- c("Orbicella faveolata", "Montastraea cavernosa")
+names(specnames) <- c("Ofav", "Mcav")
+
+vacplot <- ggplot(aes(y = mean, x = Treatment, fill = Treatment),  data = vac1) +
+  geom_boxplot() + scale_fill_manual(values=c('#EBED9D','grey50','#868659','#CECE88')) +
+  facet_wrap(~Species, labeller = labeller(Species = specnames)) + theme_classic() +
+  xlab(element_blank()) + ylab("Symbiont:vacuole ratio") + theme(
+    axis.text.x=element_blank(),
+    strip.text.x = element_text(
+      size = 11, face = "bold.italic"
+    ))
+
+exoplot <- ggplot(aes(y = mean, x = Treatment, fill = Treatment),  data = exo1) +
+  geom_boxplot() + scale_fill_manual(values=c('#EBED9D','grey50','#868659','#CECE88')) +
+  facet_wrap(~Species, labeller = labeller(Species = specnames)) + theme_classic() +
+  xlab(" ") + ylab("Proportion of exocytosis") + theme(
+    axis.text.x=element_blank(),
+    strip.text.x = element_blank()
+    )
+
+gastroplot <- ggplot(aes(y = mean, x = Treatment, fill = Treatment),  data = gastro1) +
+  geom_boxplot() + scale_fill_manual(values=c('#EBED9D','grey50','#868659','#CECE88')) +
+  facet_wrap(~Species, labeller = labeller(Species = specnames)) + theme_classic() +
+  xlab(" ") + ylab("Gastrodermal separation (μm)") + theme(
+    axis.text.x=element_blank(),
+    strip.text.x = element_blank()
+    )
+
+
+plot=grid.arrange(vacplot, exoplot, gastroplot, ncol=1, nrow=3, widths=c(6), heights=c(4,4,4))
+
+ggsave("histology_boxplots.pdf", plot= plot, width=6, height=12, units="in", dpi=300)
