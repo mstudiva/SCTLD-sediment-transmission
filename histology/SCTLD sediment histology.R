@@ -66,9 +66,9 @@ yfitzoox1 <- predict(fitzoox, list(mean = xfitzoox1),type = "response")
 pdf("histology_symbiontvacuole_prediction.pdf", width=6, height=6)
 plot(as.logical(diseased) ~ mean, data = vac1, pch  = 16, 
      col = rgb(red = 0, green = 0, blue = 0, alpha = 0.1), 
-     xlab = "Symbiont:vacuole ratio", ylab = "Probability diseased", xlim = c(0.25,0.75))
+     xlab = "Symbiont:vacuole area ratio", ylab = "Probability diseased", xlim = c(0.25,0.75))
 legend(0.25, 0.2, legend=c("HS", "DC", "BDS", "IDS"),
-       col=c("#EBED9D", "grey50", "#868659", "#CECE88"), lty=1, cex=0.8)
+       col=c('grey50','#EBED9D','#868659','#CECE88'), lty=1, cex=0.8)
 lines(xfitzoox1,yfitzoox1)
 
 thresh <- max(yfitzoox1[yfitzoox1 <= 0.5])
@@ -80,19 +80,19 @@ segments(maxprop,0,maxprop,.5,col = 'black', lty = 'dashed')
 
 xH <- vac1$mean[which(vac1$Treatment == 'HS')]
 yH <- predict(fitzoox, list(mean = xH), type = "response")
-points(xH,yH,col = '#EBED9D')
+points(xH,yH,col = 'grey50')
 sdH <- vac1$sd[which(vac1$Treatment == 'HS')]
 sdlowH <- xH-sdH
 sdhighH <- xH+sdH
-segments(sdlowH,yH,sdhighH,yH,col = '#EBED9D')
+segments(sdlowH,yH,sdhighH,yH,col = 'grey50')
 
 xD <- vac1$mean[which(vac1$Treatment == 'DC')]
 yD <- predict(fitzoox, list(mean = xD), type = "response")
-points(xD,yD,col = 'grey50')
+points(xD,yD,col = '#EBED9D')
 sdC <- vac1$sd[which(vac1$Treatment == 'DC')]
 sdlowC <- xD-sdC
 sdhighC <- xD+sdC
-segments(sdlowC,yD,sdhighC,yD, col = 'grey50')
+segments(sdlowC,yD,sdhighC,yD, col = '#EBED9D')
 
 xB <- vac1$mean[which(vac1$Treatment == 'BDS')]
 yB <- predict(fitzoox, list(mean = xB), type = "response")
@@ -133,7 +133,7 @@ names(specnames) <- c("Ofav", "Mcav")
 
 pdf("histology_symbiontvacuole_boxplot.pdf", width=6, height=4)
 ggplot(aes(y = mean, x = Treatment, fill = Treatment),  data = vac1) +
-  geom_boxplot() + scale_fill_manual(values=c('#EBED9D','grey50','#868659','#CECE88')) +
+  geom_boxplot() + scale_fill_manual(values=c('grey50','#EBED9D','#868659','#CECE88')) +
   facet_wrap(~Species, labeller = labeller(Species = specnames)) + theme_classic() +
   xlab(element_blank()) + ylab("Symbiont:vacuole ratio") + theme(
     axis.text.x=element_blank(),
@@ -174,7 +174,7 @@ names(specnames) <- c("Ofav", "Mcav")
 
 pdf("histology_exocytosis_boxplot.pdf", width=6, height=4)
 ggplot(aes(y = mean, x = Treatment, fill = Treatment),  data = exo1) +
-  geom_boxplot() + scale_fill_manual(values=c('#EBED9D','grey50','#868659','#CECE88')) +
+  geom_boxplot() + scale_fill_manual(values=c('grey50','#EBED9D','#868659','#CECE88')) +
   facet_wrap(~Species, labeller = labeller(Species = specnames)) + theme_classic() +
   xlab(" ") + ylab("Proportion of Exocytosis") + theme(
     strip.text.x = element_text(
@@ -202,7 +202,7 @@ names(specnames) <- c("Ofav", "Mcav")
 
 pdf("histology_gastrosep_boxplot.pdf", width=6, height=4)
 ggplot(aes(y = mean, x = Treatment, fill = Treatment),  data = gastro1) +
-  geom_boxplot() + scale_fill_manual(values=c('#EBED9D','grey50','#868659','#CECE88')) +
+  geom_boxplot() + scale_fill_manual(values=c('grey50','#EBED9D','#868659','#CECE88')) +
   facet_wrap(~Species, labeller = labeller(Species = specnames)) + theme_classic() +
   xlab(" ") + ylab("Mean gastrodermal separation (microns)") + theme(
     strip.text.x = element_text(
@@ -226,7 +226,7 @@ specnames <- c("Orbicella faveolata", "Montastraea cavernosa")
 names(specnames) <- c("Ofav", "Mcav")
 
 vacplot <- ggplot(aes(y = mean, x = Treatment, fill = Treatment),  data = vac1) +
-  geom_boxplot() + scale_fill_manual(values=c('#EBED9D','grey50','#868659','#CECE88')) +
+  geom_boxplot() + scale_fill_manual(values=c('grey50','#EBED9D','#868659','#CECE88')) +
   facet_wrap(~Species, labeller = labeller(Species = specnames)) + theme_classic() +
   xlab(element_blank()) + ylab("Symbiont:vacuole ratio") + theme(
     axis.text.x=element_blank(),
@@ -235,7 +235,7 @@ vacplot <- ggplot(aes(y = mean, x = Treatment, fill = Treatment),  data = vac1) 
     ))
 
 exoplot <- ggplot(aes(y = mean, x = Treatment, fill = Treatment),  data = exo1) +
-  geom_boxplot() + scale_fill_manual(values=c('#EBED9D','grey50','#868659','#CECE88')) +
+  geom_boxplot() + scale_fill_manual(values=c('grey50','#EBED9D','#868659','#CECE88')) +
   facet_wrap(~Species, labeller = labeller(Species = specnames)) + theme_classic() +
   xlab(" ") + ylab("Proportion of exocytosis") + theme(
     axis.text.x=element_blank(),
@@ -243,7 +243,7 @@ exoplot <- ggplot(aes(y = mean, x = Treatment, fill = Treatment),  data = exo1) 
     )
 
 gastroplot <- ggplot(aes(y = mean, x = Treatment, fill = Treatment),  data = gastro1) +
-  geom_boxplot() + scale_fill_manual(values=c('#EBED9D','grey50','#868659','#CECE88')) +
+  geom_boxplot() + scale_fill_manual(values=c('grey50','#EBED9D','#868659','#CECE88')) +
   facet_wrap(~Species, labeller = labeller(Species = specnames)) + theme_classic() +
   xlab(" ") + ylab("Gastrodermal separation (μm)") + theme(
     axis.text.x=element_blank(),
