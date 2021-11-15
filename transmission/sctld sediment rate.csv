@@ -1,0 +1,13 @@
+species,treatment,condition,rate
+Of,Of_dc,diseased,0.89
+Of,Of_dc,healthy,0.11
+Of,Of_bds,diseased,0.33
+Of,Of_bds,healthy,0.67
+Of,Of_ids,diseased,0.33
+Of,Of_ids,healthy,0.67
+Mc,Mc_dc,diseased,1
+Mc,Mc_dc,healthy,0
+Mc,Mc_bds,diseased,0.67
+Mc,Mc_bds,healthy,0.33
+Mc,Mc_ids,diseased,0.83
+Mc,Mc_ids,healthy,0.17

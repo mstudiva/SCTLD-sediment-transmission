@@ -13,57 +13,72 @@ library(survminer)
 
 #### data import ####
 
-sed <- read.csv("sctld_sediment.csv", head=T)
-sed$Genotype <- as.factor(sed$Genotype)
-str(sed)
-head(sed)
-# keeps species/treatment order as imported
-sed$Species.Treatment=factor(sed$Species.Treatment, levels=unique(sed$Species.Treatment)) 
+transmission <- read.csv("sctld sediment transmission.csv", head=T)
+str(transmission)
+head(transmission)
 
+# subsets the data frame to remove healthy sediment (since no disease observed)
+transmission <- subset(transmission, treatment!="hs")
+transmission
 
 #### data normality/transformation ####
 
-# plots histogram and q-q plot for test of normality assumptions
-hist(sed$total.days)
-qqnorm(sed$total.days)
-qqline(sed$total.days)
-
 # Shapiro test, p-values below 0.05 indicate violations of normality assumptions
-shapiro.test(sed$total.days)
+shapiro.test(transmission$lesion)
 # not normal
 
 # BoxCox transformation finds best exponent value for data transformation
-bc <- boxcox(sed$total.days ~ sed$Species.Treatment)
+bc <- boxcox(transmission$lesion ~ transmission$species_treatment)
 lambda <- bc$x[which.max(bc$y)]
+
+# repeating Shaprio test
+shapiro.test((transmission$lesion^lambda-1)/lambda)
+# still not normal
+
+# plots histogram and q-q plots for raw and Box-Cox transformed data
+pdf("sctld sediment transmission normality.pdf")
+par(mfrow=c(2,2))
+hist(transmission$lesion)
+qqnorm(transmission$lesion)
+qqline(transmission$lesion)
+
+hist((transmission$lesion^lambda-1)/lambda)
+qqnorm((transmission$lesion^lambda-1)/lambda)
+qqline((transmission$lesion^lambda-1)/lambda)
+dev.off()
+# Box-Cox transformation does not appear to have helped
 
 
 #### statistical tests ####
 
 # ANOVA on untransformed data
-anova <- aov (total.days ~ Species*Genotype*Treatment, data =sed)
+anova <- aov (lesion ~ species*colony*treatment, data =transmission)
 summary(anova)
 
 # ANOVA on Box-Cox transformed data
-anova.bc <- aov(((total.days^lambda-1)/lambda) ~ Species*Genotype*Treatment, data=sed)
+anova.bc <- aov(((lesion^lambda-1)/lambda) ~ species*colony*treatment, data=transmission)
 summary(anova.bc)
 
 # Q-Q plot comparison between untransformed and transformed data
+pdf("sctld sediment transmission ANOVA.pdf")
+par(mfrow=c(1,2))
 qq <- par(pty = "s", mfrow = c(1, 2))
 qqnorm(anova$residuals); qqline(anova$residuals)
 qqnorm(anova.bc$residuals); qqline(anova.bc$residuals)
+dev.off()
+
 # despite deviations from normality in raw data, Q-Q plot of ANOVA residuals appears more normal than with Box-Cox transformation
 # proceeding with ANOVA of raw data
-# both factors (species and treatment) significant
 
 # Tukey post hoc tests
 tukey <- TukeyHSD(anova)
 tukey
 
 # creating a dataframe of the pairwise comparisons needed for plots and doing a bit of table reformatting
-letters <- data.frame(tukey$`Species:Treatment`)
+letters <- data.frame(tukey$`species:treatment`)
 letters$Var <- rownames(letters)
 names(letters)[5] <- "comparison"
-letters$comparison = str_replace_all(letters$comparison,":",".")
+letters$comparison = str_replace_all(letters$comparison,":","_")
 letters
 
 # creates compact letter display of significant pairwise differences for figure
@@ -73,57 +88,52 @@ cld
 
 #### time to transmission figure ####
 
-sed$Species.Treatment=factor(sed$Species.Treatment, levels=unique(sed$Species.Treatment)) 
+transmission$species_treatment=factor(transmission$species_treatment, levels=c("Of_dc","Of_bds","Of_ids","Mc_dc","Mc_bds","Mc_ids")) 
 # boxplots comparing time to transmission among species/treatments
-transmission <-
+transmission_plot_lesion <-
   ggboxplot(
-    sed,
-    x = "Species.Treatment",
-    y = "total.days",
+    transmission,
+    x = "species_treatment",
+    y = "lesion",
     color = "grey30",
     palette = c("#EBED9D", "#868659","#CECE88","#EBED9D", "#868659","#CECE88"),
-    fill = "Species.Treatment",
+    fill = "species_treatment",
     add = "jitter",
     add.params = list(size = 1, jitter = 0.5),
     width = 0.7,
     size = 0.5
-  ) + labs(x = "Treatment",
-           y = "Days",
+  ) + labs(x = element_blank(),
+           y = "Time to transmission (d)",
            fill = 'Treatment') + 
   theme_bw() + 
   theme(plot.title = element_text(hjust = 0.5),  legend.position = "right")+
   geom_text(data=cld, aes(x = Group, y=0, label=Letter)) 
-transmission
+transmission_plot_lesion
 
-ggsave("time_to_transmission.pdf", plot= transmission, width=6, height=4, units="in", dpi=300)
+ggsave("sctld sediment transmission.pdf", plot= transmission_plot_lesion, width=6, height=4, units="in", dpi=300)
 
 
 #### transmission rate figure ####
 
-rate <- read.csv("transmission_rate.csv", head = T)
+rate <- read.csv("sctld sediment rate.csv", head = T)
 rate
 rate$treatment=factor(rate$treatment, levels=unique(rate$treatment)) 
-transrate <- ggplot(rate, aes(fill=forcats::fct_rev(condition), y=rate, x=treatment)) + 
+transmission_plot_rate <- ggplot(rate, aes(fill=forcats::fct_rev(condition), y=rate, x=treatment)) + 
    scale_fill_manual(values=c("#EBED9D", "#EBED9D")) +
   geom_col(width = 0.5) +
   theme_bw() 
-transrate
+transmission_plot_rate
 
-ggsave("transmission_rate.pdf", plot= transrate, width=7.25, height=1.5, units="in", dpi=300)
+ggsave("sctld sediment rate.pdf", plot= transmission_plot_rate, width=7.25, height=1.5, units="in", dpi=300)
 
 
 #### survivorship ####
 
-survivorship <- read.csv("sediment_survivorship.csv", head = T)
+transmission$treatment=factor(transmission$treatment, levels=c("dc","bds","ids")) 
 
-# subsetting data to remove healthy sediment treatment since no observed lesions
-survivorship <- subset(survivorship, Treatment!="hs")
-str(survivorship)
-survivorship$Treatment <- factor(survivorship$Treatment, levels=c("dc","bds","ids")) 
-
-# subset by species
-ofav <- subset(survivorship, Species=="Of")
-mcav <- subset(survivorship, Species=="Mc")
+# subset dataframe by species
+ofav <- subset(transmission, species=="Of")
+mcav <- subset(transmission, species=="Mc")
 
 # create survival objects for each species (using the Kaplan-Meier method)
 survOf <- Surv(time = ofav$days, event = ofav$status)
@@ -133,32 +143,30 @@ survMc <- Surv(time = mcav$days, event = mcav$status)
 survMc
 
 # run survival model for each species
-fitOfav <- survfit(survOf ~ Treatment, data = ofav)
-summary(fitOfav)
+fitOf <- survfit(survOf ~ treatment, data = ofav)
+summary(fitOf)
 
-fitMcav <- survfit(survMc ~ Treatment, data = mcav)
-summary(fitMcav)
+fitMc <- survfit(survMc ~ treatment, data = mcav)
+summary(fitMc)
 
 # Kaplan-Meier plots for each species
-Fill.colour<-c("#EBED9D", "#868659","#CECE88")
+fill.color<-c("#EBED9D", "#868659","#CECE88")
 
-survival_Ofav<-ggsurvplot(fitOfav, data = ofav, pval = TRUE, 
-                              conf.int = T, risk.table=T, palette=Fill.colour,
-                              break.time.by=5, xlim=c(0,25), risk.table.y.text = FALSE,
-                              risk.table.title="Number of fragments at risk") + ggtitle("O. faveolata") 
+survival_Ofav<-ggsurvplot(fitOf, data = ofav, pval = TRUE, xlab="Days", ylab="Health probability",
+                              conf.int = T, risk.table=T, palette=fill.color,
+                              break.time.by=5, xlim=c(0,28), risk.table.y.text = FALSE) + ggtitle("O. faveolata") 
 survival_Ofav
 
-survival_Mcav<-ggsurvplot(fitMcav, data = mcav, pval = TRUE, 
-                          conf.int = T, risk.table=T, palette=Fill.colour,
-                          break.time.by=5, xlim=c(0,25), risk.table.y.text = FALSE,
-                          risk.table.title="Number of fragments at risk") + ggtitle("M. cavernosa") 
+survival_Mcav<-ggsurvplot(fitMc, data = mcav, pval = TRUE, xlab="Days", ylab="Health probability",
+                          conf.int = T, risk.table=T, palette=fill.color,
+                          break.time.by=5, xlim=c(0,28), risk.table.y.text = FALSE) + ggtitle("M. cavernosa") 
 survival_Mcav
 
 # hazard ratio by disease treatments
-hazOf <- coxph(survOf ~ Treatment, data = ofav)
+hazOf <- coxph(survOf ~ treatment, data = ofav)
 summary(hazOf)
 
-hazMc <- coxph(survMc ~ Treatment, data = mcav)
+hazMc <- coxph(survMc ~ treatment, data = mcav)
 summary(hazMc)
 
 # plots
@@ -177,5 +185,4 @@ survival_multiplot<-ggarrange(survival_Ofav$plot,
                               ncol = 2, nrow = 3)
 survival_multiplot
 
-ggsave("survivorship.pdf", survival_multiplot, width=10, height=10,dpi = 300)
-
+ggsave("sctld sediment survivorship.pdf", survival_multiplot, width=10, height=10,dpi = 300)

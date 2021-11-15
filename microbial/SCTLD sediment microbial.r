@@ -21,9 +21,9 @@ library(ape)
 
 #### data import ####
 
-asv <- read.table("ASV_table.txt", sep = "\t", header = TRUE, row.names = 1)
-taxa <- as.matrix(read.table("taxa.txt", sep = "\t", header = TRUE, row.names = 1))
-metadata <- read.table("metadata.txt", header = TRUE,row.names = 'sample_id')
+asv <- read.table("sctld sediment microbial ASV.txt", sep = "\t", header = TRUE, row.names = 1)
+taxa <- as.matrix(read.table("sctld sediment microbial taxa.txt", sep = "\t", header = TRUE, row.names = 1))
+metadata <- read.table("sctld sediment microbial metadata.txt", header = TRUE,row.names = 'sample_id')
 asv <- t(asv)
 
 # order the metadata so it matches the ASV table
@@ -66,7 +66,7 @@ da_condition <- differentialTest(formula = ~ condition,
 da_condition$significant_taxa 
 
 # plot of differentially-abundant ASVs in NAI and TL samples compared to control
-pdf("microbial_DA_condition.pdf", width=12, height=4)
+pdf("sctld sediment microbial DA condition.pdf", width=12, height=4)
 plot(da_condition)
 dev.off()
 
@@ -85,7 +85,7 @@ da_condition_genus <- differentialTest(formula = ~ condition,
 da_condition_genus$significant_taxa 
 
 # plot of differentially-abundant ASVs in NAI and TL samples compared to control
-pdf("microbial_DA_condition_genus.pdf", width=10, height=6)
+pdf("sctld sediment microbial DA condition genus.pdf", width=10, height=6)
 plot(da_condition_genus)
 dev.off()
 
@@ -105,7 +105,7 @@ da_treatment <- differentialTest(
 da_treatment$significant_taxa 
 
 # plot of differentially-abundant ASVs in treatments BDS and IDS compared to HS
-pdf("microbial_DA_treatment.pdf", width=16, height=40)
+pdf("sctld sediment microbial DA treatment.pdf", width=16, height=40)
 plot(da_treatment)
 dev.off()
 
@@ -124,12 +124,12 @@ da_treatment_genus <- differentialTest(
 da_treatment_genus$significant_taxa 
 
 # plot of differentially-abundant ASVs in treatments BDS and IDS compared to HS
-pdf("microbial_DA_treatment_genus.pdf", width=12, height=18)
+pdf("sctld sediment microbial DA treatment genus.pdf", width=12, height=18)
 plot(da_treatment_genus)
 dev.off()
 
-save(da_condition,da_condition_genus,da_treatment,da_treatment_genus,file="microbial_corncob.RData")
-load("microbial_corncob.RData")
+save(da_condition,da_condition_genus,da_treatment,da_treatment_genus,file="sctld sediment microbial corncob.RData")
+load("sctld sediment microbial corncob.RData")
 
 #### PCoA ####
 
@@ -138,7 +138,7 @@ pcoa <- pcoa(diss)
 scores <- pcoa$values
 vectors <- pcoa$vectors
 
-pdf(file="SCTLD_sediment_microbial_PCoA.pdf", width=12, height=6)
+pdf(file="SCTLD sediment microbial PCoA.pdf", width=12, height=6)
 par(mfrow=c(1,2))
 plot(vectors[,1], vectors[,2],col=c('#EBED9D','#868659','#CECE88')[as.numeric(as.factor(metadata$treatment))],pch=c(15,1,19)[as.numeric((as.factor(metadata$condition)))], xlab="Coordinate 1", ylab="Coordinate 2", main="Treatment")
 # ordispider(vectors, metadata$treatment, label=F, col=c('#EBED9D','#868659','#CECE88'))
@@ -153,7 +153,7 @@ dev.off()
 
 #### bubble plot ####
 
-sign.genera <- read.table("sign.genera.txt", sep = "\t", header = TRUE)
+sign.genera <- read.table("sctld sediment microbial DA genera.txt", sep = "\t", header = TRUE)
 
 # convert data frame from a "wide" format to a "long" format
 sign.genera.long = melt(sign.genera, id = c("Sample"))
@@ -188,4 +188,4 @@ bubble <- ggplot(sign.genera.long, aes(x = Sample, y = variable)) +
   scale_y_discrete(limits = rev(levels(sign.genera.long$variable))) 
 bubble
 
-ggsave("SCTLD_sediment_microbial_abundance.pdf", plot= bubble, width=10, height=8, units="in", dpi=300)
+ggsave("SCTLD sediment microbial abundance.pdf", plot= bubble, width=10, height=8, units="in", dpi=300)

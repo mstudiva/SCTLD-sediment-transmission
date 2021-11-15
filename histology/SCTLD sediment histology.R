@@ -135,7 +135,7 @@ pdf("histology_symbiontvacuole_boxplot.pdf", width=6, height=4)
 ggplot(aes(y = mean, x = Treatment, fill = Treatment),  data = vac1) +
   geom_boxplot() + scale_fill_manual(values=c('grey50','#EBED9D','#868659','#CECE88')) +
   facet_wrap(~Species, labeller = labeller(Species = specnames)) + theme_classic() +
-  xlab(element_blank()) + ylab("Symbiont:vacuole ratio") + theme(
+  xlab(element_blank()) + ylab("Symbiont:vacuole area ratio") + theme(
     axis.text.x=element_blank(),
     strip.text.x = element_text(
       size = 11, face = "bold.italic",
@@ -176,7 +176,7 @@ pdf("histology_exocytosis_boxplot.pdf", width=6, height=4)
 ggplot(aes(y = mean, x = Treatment, fill = Treatment),  data = exo1) +
   geom_boxplot() + scale_fill_manual(values=c('grey50','#EBED9D','#868659','#CECE88')) +
   facet_wrap(~Species, labeller = labeller(Species = specnames)) + theme_classic() +
-  xlab(" ") + ylab("Proportion of Exocytosis") + theme(
+  xlab(" ") + ylab("Proportion of exocytosis") + theme(
     strip.text.x = element_text(
       size = 11, face = "bold.italic"
     ))
@@ -204,7 +204,7 @@ pdf("histology_gastrosep_boxplot.pdf", width=6, height=4)
 ggplot(aes(y = mean, x = Treatment, fill = Treatment),  data = gastro1) +
   geom_boxplot() + scale_fill_manual(values=c('grey50','#EBED9D','#868659','#CECE88')) +
   facet_wrap(~Species, labeller = labeller(Species = specnames)) + theme_classic() +
-  xlab(" ") + ylab("Mean gastrodermal separation (microns)") + theme(
+  xlab(" ") + ylab("Gastrodermal separation (μm)") + theme(
     strip.text.x = element_text(
       size = 11, face = "bold.italic"
     ))
@@ -228,7 +228,7 @@ names(specnames) <- c("Ofav", "Mcav")
 vacplot <- ggplot(aes(y = mean, x = Treatment, fill = Treatment),  data = vac1) +
   geom_boxplot() + scale_fill_manual(values=c('grey50','#EBED9D','#868659','#CECE88')) +
   facet_wrap(~Species, labeller = labeller(Species = specnames)) + theme_classic() +
-  xlab(element_blank()) + ylab("Symbiont:vacuole ratio") + theme(
+  xlab(element_blank()) + ylab("Symbiont:vacuole area ratio") + theme(
     axis.text.x=element_blank(),
     strip.text.x = element_text(
       size = 11, face = "bold.italic"

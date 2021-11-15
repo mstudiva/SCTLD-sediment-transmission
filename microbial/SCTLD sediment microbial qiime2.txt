@@ -4,7 +4,7 @@ conda activate qiime2-2021.4
 
 qiime tools import \
   --type 'SampleData[PairedEndSequencesWithQuality]' \
-  --input-path sctld-manifest \
+  --input-path sctld_sediment_microbial_manifest \
   --output-path sctld-demux.qza \
   --input-format PairedEndFastqManifestPhred33V2
 
