@@ -10,6 +10,7 @@ library(ggplot2)
 library(dplyr)
 library(tidyverse)
 library(vegan)
+library(pairwiseAdonis)
 library(reshape2)
 library(cowplot)
 library(grid)
@@ -48,7 +49,7 @@ length(get_taxa_unique(ps, "Order"))
 get_taxa_unique(ps, "Phylum") 
 
 
-#### statistical tests ####
+#### differential abundance ####
 
 # corncob differential abundance test 
 set.seed(1)
@@ -61,6 +62,10 @@ da_condition <- differentialTest(formula = ~ condition,
 	test = "Wald", boot = FALSE,
 	data = ps,
 	fdr_cutoff = 0.05)
+
+# test statistics (number of significant taxa and test outputs for each DA taxa)
+summary(da_condition$significant_taxa)
+da_condition$significant_models
 
 # lists the significant ASVs
 da_condition$significant_taxa 
@@ -80,6 +85,10 @@ da_condition_genus <- differentialTest(formula = ~ condition,
 	test = "Wald", boot = FALSE,
 	data = ps_genus,
 	fdr_cutoff = 0.05)
+
+# test statistics (number of significant taxa and test outputs for each DA taxa)
+summary(da_condition_genus$significant_taxa)
+da_condition_genus$significant_models
 
 # lists the significant ASVs
 da_condition_genus$significant_taxa 
@@ -101,6 +110,10 @@ da_treatment <- differentialTest(
   fdr_cutoff = 0.05
 )
 
+# test statistics (number of significant taxa and test outputs for each DA taxa)
+summary(da_treatment$significant_taxa)
+da_treatment$significant_models
+
 # lists the significant ASVs
 da_treatment$significant_taxa 
 
@@ -120,6 +133,10 @@ da_treatment_genus <- differentialTest(
   fdr_cutoff = 0.05
 )
 
+# test statistics (number of significant taxa and test outputs for each DA taxa)
+summary(da_treatment_genus$significant_taxa)
+da_treatment_genus$significant_models
+
 # lists the significant ASVs
 da_treatment_genus$significant_taxa 
 
@@ -128,8 +145,62 @@ pdf("sctld sediment microbial DA treatment genus.pdf", width=12, height=18)
 plot(da_treatment_genus)
 dev.off()
 
-save(da_condition,da_condition_genus,da_treatment,da_treatment_genus,file="sctld sediment microbial corncob.RData")
+# filtering dataset to remove BDS (i.e., look at ASVs related to SCTLD exposure while eliminating sediment origin effects; HS vs IDS)
+ps_sub <- subset_samples(ps, treatment != 'BDS')
+
+# by treatment
+da_treatment_sub <- differentialTest(
+  formula = ~ treatment,
+  phi.formula = ~ treatment,
+  formula_null = ~ 1,
+  phi.formula_null = ~ treatment,
+  test = "Wald",
+  boot = FALSE,
+  data = ps_sub,
+  fdr_cutoff = 0.05
+)
+
+# test statistics (number of significant taxa and test outputs for each DA taxa)
+summary(da_treatment_sub$significant_taxa)
+da_treatment_sub$significant_models
+
+# lists the significant ASVs
+da_treatment_sub$significant_taxa 
+
+# plot of differentially-abundant ASVs in treatment IDS compared to HS
+pdf("sctld sediment microbial DA treatment subset.pdf", width=16, height=2)
+plot(da_treatment_sub)
+dev.off()
+
+# create genus-level-table
+ps_genus_sub <- ps_sub %>% tax_glom("Genus")
+
+da_treatment_genus_sub <- differentialTest(
+  formula = ~ treatment,
+  phi.formula = ~ treatment,
+  formula_null = ~ 1,
+  phi.formula_null = ~ treatment,
+  test = "Wald",
+  boot = FALSE,
+  data = ps_genus_sub,
+  fdr_cutoff = 0.05
+)
+
+# test statistics (number of significant taxa and test outputs for each DA taxa)
+summary(da_treatment_genus_sub$significant_taxa)
+da_treatment_genus_sub$significant_models
+
+# lists the significant ASVs
+da_treatment_genus_sub$significant_taxa 
+
+# plot of differentially-abundant ASVs in treatment IDS compared to HS
+pdf("sctld sediment microbial DA treatment genus subset.pdf", width=16, height=2)
+plot(da_treatment_genus_sub)
+dev.off()
+
+save(ps,ps_genus,da_condition,da_condition_genus,da_treatment,da_treatment_genus,ps_sub,ps_genus_sub,da_treatment_sub,da_treatment_genus_sub,file="sctld sediment microbial corncob.RData")
 load("sctld sediment microbial corncob.RData")
+
 
 #### PCoA ####
 
@@ -149,6 +220,49 @@ plot(vectors[,1], vectors[,2],col=c("green","orange","red")[as.numeric(as.factor
 legend("top", legend=c("control", "NAI", "TL"), fill = c("green","orange","red"), bty="n")
 legend("bottom", legend=c("HS","BDS","IDS"), pch=c(15,17,25), bty="n")
 dev.off()
+
+# filtering dataset to remove BDS
+metadata_sub <- subset(metadata, treatment !='BDS')
+asv_sub <- subset(asv, row.names(asv) %in% row.names(metadata_sub))
+
+metadata_sub$condition <- factor( as.character(metadata_sub$condition), levels=c("C","NAI","TL") )
+metadata_sub$treatment <- factor( as.character(metadata_sub$treatment), levels=c("HS","IDS") )
+
+diss_sub <- vegdist(asv_sub, "bray")
+pcoa_sub <- pcoa(diss_sub)
+scores_sub <- pcoa_sub$values
+vectors_sub <- pcoa_sub$vectors
+
+pdf(file="SCTLD sediment microbial PCoA subset.pdf", width=12, height=6)
+par(mfrow=c(1,2))
+plot(vectors_sub[,1], vectors_sub[,2],col=c('#EBED9D','#CECE88')[as.numeric(as.factor(metadata_sub$treatment))],pch=c(15,1,19)[as.numeric((as.factor(metadata_sub$condition)))], xlab="Coordinate 1", ylab="Coordinate 2", main="Treatment")
+legend("top", legend=c("HS","IDS"), fill = c('#EBED9D','#CECE88'), bty="n")
+legend("bottom", legend=c("control","NAI","TL"), pch=c(15,1,19), bty="n")
+plot(vectors_sub[,1], vectors_sub[,2],col=c("green","orange","red")[as.numeric(as.factor(metadata_sub$condition))],pch=c(15,25)[as.numeric(as.factor(metadata_sub$treatment))], xlab="Coordinate 1", ylab="Coordinate 2", main="Condition")
+legend("top", legend=c("control", "NAI", "TL"), fill = c("green","orange","red"), bty="n")
+legend("bottom", legend=c("HS","IDS"), pch=c(15,25), bty="n")
+dev.off()
+
+
+#### PERMANOVA ####
+perm_condition <- adonis(diss ~ species*condition, metadata)
+perm_condition
+
+pair_condition <- pairwise.adonis(diss, metadata$condition, p.adjust.m='fdr')
+pair_condition
+
+perm_treatment <- adonis(diss ~ species*treatment, metadata)
+perm_treatment
+
+pair_treatment <- pairwise.adonis(diss, metadata$treatment, p.adjust.m='fdr')
+pair_treatment
+
+# filtered dataset to remove BDS
+perm_condition_sub <- adonis(diss_sub ~ species*condition, metadata_sub)
+perm_condition_sub
+
+perm_treatment_sub <- adonis(diss_sub ~ species*treatment, metadata_sub)
+perm_treatment_sub
 
 
 #### bubble plot ####
